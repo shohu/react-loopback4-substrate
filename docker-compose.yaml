@@ -1,0 +1,53 @@
+version: '3'
+services:
+  front:
+    build: ./front
+    tty: yes
+    container_name: offtx-front
+    volumes:
+      - ./front:/home/node/app
+      - /home/node/app/node_modules
+    environment:
+      REACT_APP_PROVIDER_SOCKET: "ws://localhost:9944"
+      REACT_APP_API_ENDPOINT: "http://localhost:3000"
+    ports:
+      - 3001:3001
+    networks:
+      off_net:
+        ipv4_address: 172.32.10.11
+  api:
+    container_name: offtx-api
+    tty: true
+    build:
+      context: ./api
+    ports:
+      - 3000:3000
+    volumes:
+      - ./api:/home/node/app
+      - /home/node/app/node_modules
+    environment:
+      PROVIDER_SOCKET: "ws://offtx-substrate:9944"
+      SUBSTRATE_RPC: "http://offtx-substrate:9933"
+    networks:
+      off_net:
+        ipv4_address: 172.32.10.12
+  substrate:
+    build: ./substrate
+    container_name: offtx-substrate
+    volumes:
+      - ./substrate/start.sh:/home/ubuntu/start.sh
+    ports:
+      - 9944:9944  # ws - substrate
+      - 9933:9933  # http - substrate
+    tty: yes
+    networks:
+      off_net:
+        ipv4_address: 172.32.10.13
+
+networks:
+  off_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.32.10.0/24
